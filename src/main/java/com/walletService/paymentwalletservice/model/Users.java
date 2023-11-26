@@ -6,6 +6,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Users {
 	
 	private int userId;
+	private String userName;
 	private String email;
 	private float wallet;
 	
@@ -27,10 +28,17 @@ public class Users {
 	public void setWallet(float wallet) {
 		this.wallet = wallet;
 	}
+	public String getUserName() {
+		return userName;
+	}
+	public void setUserName(String userName) {
+		this.userName = userName;
+	}
 	@Override
 	public String toString() {
-		return "User [ userId=" + userId + ", email=" + email + ", wallet=" + wallet + "]";
+		return "Users [userId=" + userId + ", userName=" + userName + ", email=" + email + ", wallet=" + wallet + "]";
 	}
+	
 	
 	
 		
