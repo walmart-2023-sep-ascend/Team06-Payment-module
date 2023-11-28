@@ -63,6 +63,8 @@ public class WalletServiceImpl implements WalletService {
 	String deliveryDate=null;
 	double totalAmount = 0;
 	
+	ResponseData responseData = new ResponseData();
+	
 	// To get current Date and time
 	LocalDateTime currentDateTime = LocalDateTime.now();
 	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"); // Define the desired format
@@ -200,18 +202,23 @@ public class WalletServiceImpl implements WalletService {
 	}
 
 	public ResponseData updateWallet(InputData inputData) throws Exception {
-		double totalAmount = 0;
+		//double totalAmount = 0;
 		ResponseData responseData = new ResponseData();
 		try {
 			responseData = getShippingDelivery(inputData);
 				// update Wallet
-				Optional<Users> userInfo = userRepository.findByuserId(inputData.getUserId());
+				Optional<Users> userInfo = getUserInfo(inputData.getUserId());
 				if (userInfo.isPresent()) {
-					double wallet = userInfo.get().getWallet() - totalAmount;
+					double wallet = userInfo.get().getWallet() - inputData.getTotalAmount();
 					int result = userRepository.updateWallet(inputData.getUserId(), (float) wallet);
 					if (result == 1) {
+						responseData.setPhone(userInfo.get().getPhone());
 						responseData.setResponsecode("200");
 						responseData.setMessage("Payment Successful. Wallet amount has been deducted");
+					}
+					else {
+						responseData.setResponsecode("403");
+						responseData.setMessage("Unable to deduct Wallet amount!");
 					}
 				}
 				else {
@@ -258,8 +265,10 @@ public class WalletServiceImpl implements WalletService {
 				responseData.setTotalAmount(inputData.getTotalAmount());
 				
 
-				currentDate = currentDateTime.format(formatter);
-				deliveryDate = currentDate + shippngCart.get().getDeliveryDuration();
+				currentDate = String.valueOf(LocalDateTime.now());
+				deliveryDate = String.valueOf(LocalDateTime.now().plusDays(shippngCart.get().getDeliveryDuration()));
+				System.out.println(currentDate);
+				System.out.println(shippngCart.get().getDeliveryDuration());
 				System.out.println(deliveryDate);
 				responseData.setDeliverydate(deliveryDate);
 				System.out.println(responseData);
@@ -274,7 +283,7 @@ public class WalletServiceImpl implements WalletService {
 	@Override
 	public ResponseData orderUpdate(Order order) {
 		
-		ResponseData responseData = new ResponseData();
+		//ResponseData responseData = new ResponseData();
 		ResponseEntity<InventoryResponse> inventorymsg =null;
 		
 		currentDate = currentDateTime.format(formatter);
@@ -298,8 +307,10 @@ public class WalletServiceImpl implements WalletService {
 			System.out.println("Order created " + orderresponse);
 			logger.info("Order Created:" + orderresponse);
 			int cartid = orderresponse.getBody().getCartId();
+			//Inventory update
 			inventorymsg = inventoryUpdate(cartid);
-			sendEmailForOrderConfirmation(orderresponse.getBody(), inventorymsg.getBody());
+			//Send email for order confirmation
+			//sendEmailForOrderConfirmation(orderresponse.getBody(), inventorymsg.getBody());
 			responseData.setOrderId(orderresponse.getBody().getOrderId());
 			responseData.setCartId(orderresponse.getBody().getCartId());
 			responseData.setDeliverydate(orderresponse.getBody().getDateOfDelivery());
