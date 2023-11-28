@@ -29,7 +29,7 @@ public interface WalletService {
 
 	String sendEmailForOrderConfirmation(Order body, InventoryResponse body2);
 
-	ResponseEntity<Order> orderUpdate(Order order);
+	ResponseData orderUpdate(Order order);
 
 	ResponseEntity<InventoryResponse> inventoryUpdate(int cartid);
 

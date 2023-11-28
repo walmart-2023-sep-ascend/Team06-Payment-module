@@ -150,7 +150,7 @@ public class WalletServiceImplTest {
 	void testupdateWallet() throws Exception {
 		Optional<ShippngCart> shippngCart = Optional.of(new ShippngCart());
 		shippngCart.get().setCartId(56789);
-		shippngCart.get().setShippingCost(10.0);
+		//shippngCart.get().setShippingCost(10.0);
 
 		Optional<Users> user = Optional.of(new Users());
 		user.get().setWallet(1000);
@@ -158,7 +158,7 @@ public class WalletServiceImplTest {
 
 		InputData inputData = new InputData();
 		inputData.setAmount(1000);
-		inputData.setTotalAmount(200);
+		inputData.setTotalAmount(210);
 		inputData.setUserId(45321);
 		inputData.setCartId(56789);
 
@@ -179,7 +179,7 @@ public class WalletServiceImplTest {
 	void testgetShippingDetails() throws Exception {
 		Optional<ShippngCart> shippngCart = Optional.of(new ShippngCart());
 		shippngCart.get().setCartId(56789);
-		shippngCart.get().setShippingCost(10.0);
+		//shippngCart.get().setShippingCost(10.0);
 
 		Optional<Users> user = Optional.of(new Users());
 		user.get().setWallet(1000);
@@ -187,13 +187,13 @@ public class WalletServiceImplTest {
 
 		InputData inputData = new InputData();
 		inputData.setAmount(1000);
-		inputData.setTotalAmount(200);
+		inputData.setTotalAmount(210);
 		inputData.setUserId(45321);
 		inputData.setCartId(56789);
 
 		when(shippngCartRepository.findBycartId(any())).thenReturn(shippngCart);
 
-		ResponseData responseData = walletServiceImpl.getShippingDetails(inputData);
+		ResponseData responseData = walletServiceImpl.getShippingDelivery(inputData);
 
 		assertEquals(45321, responseData.getUserId());
 		assertEquals(210.0, responseData.getTotalAmount());

@@ -1,7 +1,5 @@
 package com.walletService.paymentwalletservice.model;
 
-import java.util.Date;
-
 public class ResponseData {
 	private String responsecode;
 	private int userId;
@@ -14,8 +12,23 @@ public class ResponseData {
 	private int cartId;
 	private double TotalAmount;
 	private String destinationOfShipping;
-	private Date deliverydate;
+	private String deliverydate;
 	
+	private long orderId;
+	private String phone;
+	
+	public long getOrderId() {
+		return orderId;
+	}
+	public void setOrderId(long l) {
+		this.orderId = l;
+	}
+	public String getPhone() {
+		return phone;
+	}
+	public void setPhone(String phone) {
+		this.phone = phone;
+	}
 	public String getTypeOfShipping() {
 		return typeOfShipping;
 	}
@@ -41,11 +54,11 @@ public class ResponseData {
 	public void setDestinationOfShipping(String destinationOfShipping) {
 		this.destinationOfShipping = destinationOfShipping;
 	}
-	public Date getDeliverydate() {
+	public String getDeliverydate() {
 		return deliverydate;
 	}
-	public void setDeliverydate(Date deliverydate) {
-		this.deliverydate = deliverydate;
+	public void setDeliverydate(String deliveryDate2) {
+		this.deliverydate = deliveryDate2;
 	}
 	public boolean isAuthenticated() {
 		return authenticated;

@@ -62,6 +62,10 @@ public class WalletServiceImpl implements WalletService {
 	String currentDate=null;
 	String deliveryDate=null;
 	double totalAmount = 0;
+	
+	// To get current Date and time
+	LocalDateTime currentDateTime = LocalDateTime.now();
+	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"); // Define the desired format
 
 	public Optional<Users> getUserInfo(int id) throws Exception {
 		Optional<Users> user = null;
@@ -152,14 +156,22 @@ public class WalletServiceImpl implements WalletService {
 				EventCodeLog eventCode = eventCodeLog.get();
 				LocalDateTime dateBefore = eventCode.getEventExpiryTimeStamp();
 				noOfMinutes = dateBefore.until(LocalDateTime.now(), ChronoUnit.MINUTES);
+				if (noOfMinutes <= 2) {
+					responseData.setAuthenticated(true);
+					responseData.setMessage("Authentication successful. User has been authenticated with OTP");
+					responseData.setResponsecode("200");
+				} else {
+					responseData.setAuthenticated(false);
+					responseData.setMessage("Authentication failed.");
+					responseData.setResponsecode("403");
+				}
 			}
-			if (noOfMinutes <= 2) {
-				responseData.setAuthenticated(true);
-				responseData.setMessage("Authentication successful. User has been authenticated with OTP");
-			} else {
+			else {
 				responseData.setAuthenticated(false);
-				responseData.setMessage("Authentication failed.");
+				responseData.setMessage("Incorrect OTP! Authentication failed.");
+				responseData.setResponsecode("403");
 			}
+			
 		} catch (Exception e) {
 			logger.error("Log level: INFO : exception occured while validating  Customer Wallet");
 			throw new Exception("Exception occured while getting the Customer Info");
@@ -176,7 +188,10 @@ public class WalletServiceImpl implements WalletService {
 				responseData.setUserId(inputData.getUserId());
 				totalAmount = inputData.getAmount() + shippngCart.get().getShippingCost();
 				responseData.setTotalAmount(totalAmount);
+				responseData.setResponsecode("200");
 			}
+			else
+				responseData.setResponsecode("403");
 		} catch (Exception e) {
 			logger.error("Log level: INFO : Exception occured while getting shippingCost Details !!");
 			throw new Exception("Exception occured while getting shippingCost " + e.getMessage());
@@ -188,43 +203,21 @@ public class WalletServiceImpl implements WalletService {
 		double totalAmount = 0;
 		ResponseData responseData = new ResponseData();
 		try {
-			responseData.setUserId(inputData.getUserId());
-			responseData.setCartId(inputData.getCartId());
-			logger.info("Log level: INFO : calling shoppingCart ");
-			Optional<ShippngCart> shippngCart = shippngCartRepository.findBycartId(inputData.getCartId());
-			if (shippngCart.isPresent()) {
-				responseData.setDestinationOfShipping(shippngCart.get().getDestinationOfShipping());
-				responseData.setTypeOfShipping(shippngCart.get().getTypeOfShipping());
-
-				totalAmount = inputData.getTotalAmount() + shippngCart.get().getShippingCost();
-				responseData.setTotalAmount(totalAmount);
-				responseData.setResponsecode("200");
-
-				// To get current Date and time
-				LocalDateTime currentDateTime = LocalDateTime.now();
-				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"); // Define the desired
-																									// format
-				currentDate = currentDateTime.format(formatter);
-				deliveryDate = currentDate + shippngCart.get().getDeliveryDuration();
-
-				/*
-				 * LocalDateTime date = LocalDateTime.now(); LocalDateTime localdate =
-				 * date.plusDays(shippngCart.get().getDeliveryDuration()); Instant instant =
-				 * localdate.atZone(ZoneId.systemDefault()).toInstant();
-				 * responseData.setDeliverydate(Date.from(instant));
-				 * 
-				 * deliveryDate=Date.from(instant);
-				 */
-
+			responseData = getShippingDelivery(inputData);
 				// update Wallet
 				Optional<Users> userInfo = userRepository.findByuserId(inputData.getUserId());
 				if (userInfo.isPresent()) {
 					double wallet = userInfo.get().getWallet() - totalAmount;
 					int result = userRepository.updateWallet(inputData.getUserId(), (float) wallet);
-					if (result == 1)
+					if (result == 1) {
+						responseData.setResponsecode("200");
 						responseData.setMessage("Payment Successful. Wallet amount has been deducted");
+					}
 				}
-			}
+				else {
+					responseData.setResponsecode("403");
+					responseData.setMessage("User id not present");
+				}
 		} catch (Exception e) {
 			logger.error("Log level: INFO : exception occured while while updating the Wallet Amount");
 			throw new Exception("Exception occured while updating the Wallet Amount " + e.getMessage());
@@ -234,7 +227,25 @@ public class WalletServiceImpl implements WalletService {
 
 	@Override
 	public ResponseData getShippingDetails(InputData inputData) throws Exception {
-		double totalAmount = 0;
+		
+		Optional<Users> user=null;
+		ResponseData responseData = new ResponseData();
+		try {
+			responseData = getShippingDelivery(inputData);
+			user = getUserInfo(inputData.getUserId());
+			responseData.setPhone(user.get().getPhone());
+			responseData.setResponsecode("200");
+			responseData.setMessage("Payment will be done during delivery of the order");
+			System.out.println(responseData);
+			
+		} catch (Exception e) {
+			logger.error("Log level: INFO : exception occured while getting Shipping Details");
+			throw new Exception("Exception occured while getting Shipping Details " + e.getMessage());
+		}
+		return responseData;
+	}
+
+	public ResponseData getShippingDelivery(InputData inputData) throws Exception {
 		ResponseData responseData = new ResponseData();
 		try {
 			responseData.setUserId(inputData.getUserId());
@@ -244,24 +255,71 @@ public class WalletServiceImpl implements WalletService {
 			if (shippngCart.isPresent()) {
 				responseData.setDestinationOfShipping(shippngCart.get().getDestinationOfShipping());
 				responseData.setTypeOfShipping(shippngCart.get().getTypeOfShipping());
+				responseData.setTotalAmount(inputData.getTotalAmount());
+				
 
-				totalAmount = inputData.getTotalAmount() + shippngCart.get().getShippingCost();
-				responseData.setTotalAmount(totalAmount);
-				responseData.setResponsecode("200");
-
-				LocalDateTime date = LocalDateTime.now();
-				LocalDateTime localdate = date.plusDays(shippngCart.get().getDeliveryDuration());
-				Instant instant = localdate.atZone(ZoneId.systemDefault()).toInstant();
-				responseData.setDeliverydate(Date.from(instant));
-				responseData.setMessage("Payment will be done during delivery of the order");
+				currentDate = currentDateTime.format(formatter);
+				deliveryDate = currentDate + shippngCart.get().getDeliveryDuration();
+				System.out.println(deliveryDate);
+				responseData.setDeliverydate(deliveryDate);
+				System.out.println(responseData);
 			}
 		} catch (Exception e) {
+			responseData.setResponsecode("403");
 			logger.error("Log level: INFO : exception occured while getting Shipping Details");
 			throw new Exception("Exception occured while getting Shipping Details " + e.getMessage());
 		}
 		return responseData;
 	}
+	@Override
+	public ResponseData orderUpdate(Order order) {
+		
+		ResponseData responseData = new ResponseData();
+		ResponseEntity<InventoryResponse> inventorymsg =null;
+		
+		currentDate = currentDateTime.format(formatter);
+		//deliveryDate = currentDate + 2;
+		//totalAmount=2750;
+		
+		/*
+		order.setUserId(order.getUserId());
+		order.setCartId(order.getCartId());
+		order.setAmount(order.getAmount());		
+		order.setModeOfPayment(order.getModeOfPayment());
+		order.setPaymentStatus(order.getPaymentStatus());
+		order.setDateOfDelivery(order.getDateOfDelivery());
+		*/
+		order.setDateOfOrder(currentDate);
+				
+		ResponseEntity<Order> orderresponse = restTemplate.postForEntity("http://ORDERSERVICE/addorder", order,
+				Order.class);
+		
+		if (orderresponse.getStatusCode() == HttpStatus.CREATED) {
+			System.out.println("Order created " + orderresponse);
+			logger.info("Order Created:" + orderresponse);
+			int cartid = orderresponse.getBody().getCartId();
+			inventorymsg = inventoryUpdate(cartid);
+			sendEmailForOrderConfirmation(orderresponse.getBody(), inventorymsg.getBody());
+			responseData.setOrderId(orderresponse.getBody().getOrderId());
+			responseData.setCartId(orderresponse.getBody().getCartId());
+			responseData.setDeliverydate(orderresponse.getBody().getDateOfDelivery());
+			responseData.setTotalAmount(orderresponse.getBody().getAmount());
+			responseData.setResponsecode("200");
+			responseData.setMessage("Order Placed Successfully");
+		}		
+		else {
+			responseData.setResponsecode("403");
+			responseData.setMessage("Unable to confirm order! Please try later");
+		}
+		return responseData;
+	}
 
+	@Override
+	public ResponseEntity<InventoryResponse> inventoryUpdate(int cartid) {
+		return restTemplate.getForEntity("http://INVENTORYUPDATESERVICE/inventoryupdate/{cartid}",
+				InventoryResponse.class, cartid);
+	}
+	
 	@Override
 	public String sendEmailForOrderConfirmation(Order orderDetails, InventoryResponse inventoryResponse) {
 		EmailDetails emailDetails = new EmailDetails();
@@ -326,30 +384,5 @@ public class WalletServiceImpl implements WalletService {
 		return emailmsg.getBody();
 	}
 
-	@Override
-	public ResponseEntity<Order> orderUpdate(Order order) {
-		LocalDateTime currentDateTime = LocalDateTime.now();
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"); // Define the desired
-																							// format
-		currentDate = currentDateTime.format(formatter);
-		deliveryDate = currentDate + 2;
-		totalAmount=2750;
-		
-		order.setDateOfOrder(currentDate);
-		System.out.println("Current date "+currentDate);
-		order.setDateOfDelivery(deliveryDate);
-		System.out.println("delivery date "+deliveryDate);
-		order.setAmount((float) totalAmount);
-		ResponseEntity<Order> orderresponse = restTemplate.postForEntity("http://ORDERSERVICE/addorder", order,
-				Order.class);
-		System.out.println("Order created " + orderresponse);
-		logger.info("Order Created:" + orderresponse);
-		return orderresponse;
-	}
-
-	@Override
-	public ResponseEntity<InventoryResponse> inventoryUpdate(int cartid) {
-		return restTemplate.getForEntity("http://INVENTORYUPDATESERVICE/inventoryupdate/{cartid}",
-				InventoryResponse.class, cartid);
-	}
+	
 }

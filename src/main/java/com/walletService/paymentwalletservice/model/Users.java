@@ -9,7 +9,14 @@ public class Users {
 	private String userName;
 	private String email;
 	private float wallet;
+	private String phone;
 	
+	public String getPhone() {
+		return phone;
+	}
+	public void setPhone(String phone) {
+		this.phone = phone;
+	}
 	public int getUserId() {
 		return userId;
 	}

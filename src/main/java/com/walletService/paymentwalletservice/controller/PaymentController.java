@@ -96,16 +96,9 @@ public class PaymentController {
 	}
 
 	@PostMapping("/orderConfirmation")
-	public ResponseEntity<?> OrderConfirmation(@RequestBody Order order) throws Exception {
-		String status = null;
-		ResponseEntity<InventoryResponse> inventorymsg =null;
-		ResponseEntity<Order> orderresponse=walletService.orderUpdate(order);
-		if (orderresponse.getStatusCode() == HttpStatus.CREATED) {
-			int cartid = orderresponse.getBody().getCartId();
-			inventorymsg = walletService.inventoryUpdate(cartid);
-		}		
-
-		status = walletService.sendEmailForOrderConfirmation(orderresponse.getBody(), inventorymsg.getBody());
+	public ResponseEntity<?>  OrderConfirmation(@RequestBody Order order) throws Exception {
+	
+		ResponseData status=walletService.orderUpdate(order);
 		return new ResponseEntity<>(status, HttpStatus.OK);
 
 	}
