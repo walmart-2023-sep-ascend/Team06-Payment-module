@@ -184,6 +184,7 @@ public class WalletServiceImplTest {
 		Optional<Users> user = Optional.of(new Users());
 		user.get().setWallet(1000);
 		user.get().setUserId(45321);
+		user.get().setPhone("9949595959");
 
 		InputData inputData = new InputData();
 		inputData.setAmount(1000);
@@ -192,13 +193,15 @@ public class WalletServiceImplTest {
 		inputData.setCartId(56789);
 
 		when(shippngCartRepository.findBycartId(any())).thenReturn(shippngCart);
+		when(userRepository.findByuserId(any())).thenReturn(user);
 
-		ResponseData responseData = walletServiceImpl.getShippingDelivery(inputData);
+		ResponseData responseData = walletServiceImpl.getShippingDetails(inputData);
 
 		assertEquals(45321, responseData.getUserId());
 		assertEquals(210.0, responseData.getTotalAmount());
 		assertEquals(56789, responseData.getCartId());
-		assertEquals("Payment will be done during delivery of the order", responseData.getMessage());
+		assertEquals("9949595959",responseData.getPhone());
+		//assertEquals("Payment will be done during delivery of the order", responseData.getMessage());
 
 	}
 
