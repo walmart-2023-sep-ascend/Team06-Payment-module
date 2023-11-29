@@ -267,11 +267,7 @@ public class WalletServiceImpl implements WalletService {
 
 				currentDate = String.valueOf(LocalDateTime.now());
 				deliveryDate = String.valueOf(LocalDateTime.now().plusDays(shippngCart.get().getDeliveryDuration()));
-				System.out.println(currentDate);
-				System.out.println(shippngCart.get().getDeliveryDuration());
-				System.out.println(deliveryDate);
 				responseData.setDeliverydate(deliveryDate);
-				System.out.println(responseData);
 			}
 		} catch (Exception e) {
 			responseData.setResponsecode("403");
