@@ -282,7 +282,7 @@ public class WalletServiceImpl implements WalletService {
 		//ResponseData responseData = new ResponseData();
 		ResponseEntity<InventoryResponse> inventorymsg =null;
 		
-		currentDate = currentDateTime.format(formatter);
+		currentDate = String.valueOf(LocalDateTime.now());
 		//deliveryDate = currentDate + 2;
 		//totalAmount=2750;
 		
@@ -306,7 +306,8 @@ public class WalletServiceImpl implements WalletService {
 			//Inventory update
 			inventorymsg = inventoryUpdate(cartid);
 			//Send email for order confirmation
-			//sendEmailForOrderConfirmation(orderresponse.getBody(), inventorymsg.getBody());
+			String email=sendEmailForOrderConfirmation(orderresponse.getBody(), inventorymsg.getBody());
+			System.out.println(email);
 			responseData.setOrderId(orderresponse.getBody().getOrderId());
 			responseData.setCartId(orderresponse.getBody().getCartId());
 			responseData.setDeliverydate(orderresponse.getBody().getDateOfDelivery());
@@ -333,10 +334,17 @@ public class WalletServiceImpl implements WalletService {
 		List<ProductResponse> productResponseList = new ArrayList<ProductResponse>();
 		ProductResponse productResponse = null;
 
+		emailDetails.setSubject("Order Confirmation");
 		// Order Info
 		emailDetails.setOrder_id(String.valueOf(orderDetails.getOrderId()));
 		emailDetails.setDelivery_date(orderDetails.getDateOfDelivery());
-		emailDetails.setShippingCost("0");
+		double shippingCost=0;
+		Optional<ShippngCart> shippngCart = shippngCartRepository.findBycartId(orderDetails.getCartId());
+		if (shippngCart.isPresent()) {
+			shippingCost=shippngCart.get().getShippingCost();
+		}
+		
+		emailDetails.setShippingCost(String.valueOf(shippingCost));
 		emailDetails.setTotalAmount(String.valueOf(orderDetails.getAmount()));
 
 		// User Info
@@ -347,7 +355,7 @@ public class WalletServiceImpl implements WalletService {
 			e.printStackTrace();
 		}
 		emailDetails.setCustName(user.get().getUserName());
-		emailDetails.setCustName(user.get().getEmail());
+		emailDetails.setCustEmail(user.get().getEmail());
 
 		// Product Info
 		List<Product> product = inventoryResponse.getProduct();
@@ -357,7 +365,6 @@ public class WalletServiceImpl implements WalletService {
 			productResponse = new ProductResponse();
 
 			for (Products p1 : products) {
-
 				if (p.getProductId() == p1.getProductId()) {
 					productResponse.setProdName(p1.getProductName());
 					productResponse.setProdRetialPrice(String.valueOf(p1.getProductRetailPrice()));
@@ -373,21 +380,9 @@ public class WalletServiceImpl implements WalletService {
 
 	}
 
-	private String finalEmailForOrderConfirmation(EmailDetails emailDetails) {
-		ResponseEntity<String> emailmsg = restTemplate.postForEntity("http://EMAILSERVICE/sendEmail", emailDetails,
+	private String finalEmailForOrderConfirmation(EmailDetails emailDetails) {		
+		ResponseEntity<String> emailmsg = restTemplate.postForEntity("http://EMAILSERVICE/sendMail", emailDetails,
 				String.class);
-		//ResponseEntity<String> emailmsg = restTemplate.post
-		/*restTemplate=new RestTemplate();
-		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON);            
-		String emptyJsonPayload = "{}";
-
-		            // Set the request entity with the empty JSON payload and headers
-		          //  HttpEntity<String> requestEntity = new HttpEntity<>(emptyJsonPayload, headers);
-		            HttpEntity<EmailDetails> requestEntity = new HttpEntity<EmailDetails>(emailDetails);
-		            // Make the POST request using postForEntity
-		   String url = "http://EMAILSERVICE/sendEmail";
-		   ResponseEntity<String> emailmsg = restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);*/
 		return emailmsg.getBody();
 	}
 

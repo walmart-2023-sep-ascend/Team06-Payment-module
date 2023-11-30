@@ -6,9 +6,11 @@ public class EmailDetails {
 	private String custName;
 	private String custEmail;
 	private String order_id;
-	private String cart_id;
 	private String delivery_date;
 	private String shippingCost;
+	private String totalAmount;
+	List<ProductResponse> productResponse;
+
 	public String getShippingCost() {
 		return shippingCost;
 	}
@@ -16,10 +18,6 @@ public class EmailDetails {
 	public void setShippingCost(String shippingCost) {
 		this.shippingCost = shippingCost;
 	}
-
-	private String totalAmount;
-	
-	List<ProductResponse> productResponse;
 
 	public String getSubject() {
 		return subject;
@@ -53,14 +51,6 @@ public class EmailDetails {
 		this.order_id = order_id;
 	}
 
-	public String getCart_id() {
-		return cart_id;
-	}
-
-	public void setCart_id(String cart_id) {
-		this.cart_id = cart_id;
-	}
-
 	public String getDelivery_date() {
 		return delivery_date;
 	}
@@ -84,7 +74,5 @@ public class EmailDetails {
 	public void setProductResponse(List<ProductResponse> productResponse) {
 		this.productResponse = productResponse;
 	}
-	
 
-	
 }
