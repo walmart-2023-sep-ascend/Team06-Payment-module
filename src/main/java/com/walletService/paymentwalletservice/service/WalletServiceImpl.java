@@ -1,40 +1,34 @@
 package com.walletService.paymentwalletservice.service;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
 
 import com.walletService.paymentwalletservice.email.EmailService;
 import com.walletService.paymentwalletservice.exception.UserNotFoundException;
+import com.walletService.paymentwalletservice.model.EmailDetails;
 import com.walletService.paymentwalletservice.model.EventCodeLog;
 import com.walletService.paymentwalletservice.model.InputData;
 import com.walletService.paymentwalletservice.model.InventoryResponse;
 import com.walletService.paymentwalletservice.model.Order;
+import com.walletService.paymentwalletservice.model.Product;
+import com.walletService.paymentwalletservice.model.ProductResponse;
+import com.walletService.paymentwalletservice.model.Products;
 import com.walletService.paymentwalletservice.model.ResponseData;
 import com.walletService.paymentwalletservice.model.ShippngCart;
 import com.walletService.paymentwalletservice.model.Users;
-import com.walletService.paymentwalletservice.model.Products;
-import com.walletService.paymentwalletservice.model.Product;
-import com.walletService.paymentwalletservice.model.ProductResponse;
-import com.walletService.paymentwalletservice.model.EmailDetails;
 import com.walletService.paymentwalletservice.repository.ShippngCartRepository;
 import com.walletService.paymentwalletservice.repository.UserRepository;
 import com.walletService.paymentwalletservice.repository.WalletRepository;
@@ -279,21 +273,10 @@ public class WalletServiceImpl implements WalletService {
 	@Override
 	public ResponseData orderUpdate(Order order) {
 		
-		//ResponseData responseData = new ResponseData();
 		ResponseEntity<InventoryResponse> inventorymsg =null;
 		
 		currentDate = String.valueOf(LocalDateTime.now());
-		//deliveryDate = currentDate + 2;
-		//totalAmount=2750;
-		
-		/*
-		order.setUserId(order.getUserId());
-		order.setCartId(order.getCartId());
-		order.setAmount(order.getAmount());		
-		order.setModeOfPayment(order.getModeOfPayment());
-		order.setPaymentStatus(order.getPaymentStatus());
-		order.setDateOfDelivery(order.getDateOfDelivery());
-		*/
+
 		order.setDateOfOrder(currentDate);
 				
 		ResponseEntity<Order> orderresponse = restTemplate.postForEntity("http://ORDERSERVICE/addorder", order,
@@ -336,6 +319,8 @@ public class WalletServiceImpl implements WalletService {
 
 		emailDetails.setSubject("Order Confirmation");
 		// Order Info
+		emailDetails.setCartId(orderDetails.getCartId());
+		emailDetails.setUserId(orderDetails.getUserId());
 		emailDetails.setOrder_id(String.valueOf(orderDetails.getOrderId()));
 		emailDetails.setDelivery_date(orderDetails.getDateOfDelivery());
 		double shippingCost=0;

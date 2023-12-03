@@ -2,6 +2,8 @@ package com.walletService.paymentwalletservice.model;
 import java.util.List;
 
 public class EmailDetails {
+	private int userId;
+	private int cartId;
 	private String subject;
 	private String custName;
 	private String custEmail;
@@ -10,6 +12,23 @@ public class EmailDetails {
 	private String shippingCost;
 	private String totalAmount;
 	List<ProductResponse> productResponse;
+
+	
+	public int getUserId() {
+		return userId;
+	}
+
+	public void setUserId(int userId) {
+		this.userId = userId;
+	}
+
+	public int getCartId() {
+		return cartId;
+	}
+
+	public void setCartId(int cartId) {
+		this.cartId = cartId;
+	}
 
 	public String getShippingCost() {
 		return shippingCost;
