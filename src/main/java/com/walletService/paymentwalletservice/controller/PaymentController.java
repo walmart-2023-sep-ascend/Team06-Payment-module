@@ -1,13 +1,13 @@
 package com.walletService.paymentwalletservice.controller;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,16 +15,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
-import com.walletService.paymentwalletservice.model.ResponseData;
 import com.walletService.paymentwalletservice.model.InputData;
 import com.walletService.paymentwalletservice.model.Order;
+import com.walletService.paymentwalletservice.model.ResponseData;
 import com.walletService.paymentwalletservice.model.Users;
-import com.walletService.paymentwalletservice.model.Cart;
-import com.walletService.paymentwalletservice.model.ShippngCart;
-import com.walletService.paymentwalletservice.model.InventoryResponse;
 import com.walletService.paymentwalletservice.service.WalletService;
 
 @RestController
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class PaymentController {
 	Logger logger = LoggerFactory.getLogger(PaymentController.class);
 
@@ -96,9 +94,9 @@ public class PaymentController {
 	}
 
 	@PostMapping("/orderConfirmation")
-	public ResponseEntity<?>  OrderConfirmation(@RequestBody Order order) throws Exception {
-	
-		ResponseData status=walletService.orderUpdate(order);
+	public ResponseEntity<?> OrderConfirmation(@RequestBody Order order) throws Exception {
+
+		ResponseData status = walletService.orderUpdate(order);
 		return new ResponseEntity<>(status, HttpStatus.OK);
 
 	}

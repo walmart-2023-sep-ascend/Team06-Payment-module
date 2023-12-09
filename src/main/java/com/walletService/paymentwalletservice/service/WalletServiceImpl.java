@@ -18,6 +18,9 @@ import org.springframework.web.client.RestTemplate;
 
 import com.walletService.paymentwalletservice.email.EmailService;
 import com.walletService.paymentwalletservice.exception.UserNotFoundException;
+import com.walletService.paymentwalletservice.feign.EmailFeignClient;
+import com.walletService.paymentwalletservice.feign.InventoryFeignClient;
+import com.walletService.paymentwalletservice.feign.OrderFeignClient;
 import com.walletService.paymentwalletservice.model.EmailDetails;
 import com.walletService.paymentwalletservice.model.EventCodeLog;
 import com.walletService.paymentwalletservice.model.InputData;
@@ -49,16 +52,29 @@ public class WalletServiceImpl implements WalletService {
 
 	@Autowired
 	EmailService emailService;
-
+	
 	@Autowired
 	RestTemplate restTemplate;
 
-	String currentDate=null;
-	String deliveryDate=null;
+	private final OrderFeignClient orderFeignClient;
+	private final InventoryFeignClient inventoryFeignClient;
+	private final EmailFeignClient emailFeignClient;
+
+	@Autowired
+	public WalletServiceImpl(OrderFeignClient orderFeignClient, InventoryFeignClient inventoryFeignClient,
+			EmailFeignClient emailFeignClient) {
+
+		this.orderFeignClient = orderFeignClient;
+		this.inventoryFeignClient = inventoryFeignClient;
+		this.emailFeignClient = emailFeignClient;
+	}
+
+	String currentDate = null;
+	String deliveryDate = null;
 	double totalAmount = 0;
-	
+
 	ResponseData responseData = new ResponseData();
-	
+
 	// To get current Date and time
 	LocalDateTime currentDateTime = LocalDateTime.now();
 	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"); // Define the desired format
@@ -161,13 +177,12 @@ public class WalletServiceImpl implements WalletService {
 					responseData.setMessage("Authentication failed.");
 					responseData.setResponsecode("403");
 				}
-			}
-			else {
+			} else {
 				responseData.setAuthenticated(false);
 				responseData.setMessage("Incorrect OTP! Authentication failed.");
 				responseData.setResponsecode("403");
 			}
-			
+
 		} catch (Exception e) {
 			logger.error("Log level: INFO : exception occured while validating  Customer Wallet");
 			throw new Exception("Exception occured while getting the Customer Info");
@@ -185,8 +200,7 @@ public class WalletServiceImpl implements WalletService {
 				totalAmount = inputData.getAmount() + shippngCart.get().getShippingCost();
 				responseData.setTotalAmount(totalAmount);
 				responseData.setResponsecode("200");
-			}
-			else
+			} else
 				responseData.setResponsecode("403");
 		} catch (Exception e) {
 			logger.error("Log level: INFO : Exception occured while getting shippingCost Details !!");
@@ -196,29 +210,27 @@ public class WalletServiceImpl implements WalletService {
 	}
 
 	public ResponseData updateWallet(InputData inputData) throws Exception {
-		//double totalAmount = 0;
+		// double totalAmount = 0;
 		ResponseData responseData = new ResponseData();
 		try {
 			responseData = getShippingDelivery(inputData);
-				// update Wallet
-				Optional<Users> userInfo = getUserInfo(inputData.getUserId());
-				if (userInfo.isPresent()) {
-					double wallet = userInfo.get().getWallet() - inputData.getTotalAmount();
-					int result = userRepository.updateWallet(inputData.getUserId(), (float) wallet);
-					if (result == 1) {
-						responseData.setPhone(userInfo.get().getPhone());
-						responseData.setResponsecode("200");
-						responseData.setMessage("Payment Successful. Wallet amount has been deducted");
-					}
-					else {
-						responseData.setResponsecode("403");
-						responseData.setMessage("Unable to deduct Wallet amount!");
-					}
-				}
-				else {
+			// update Wallet
+			Optional<Users> userInfo = getUserInfo(inputData.getUserId());
+			if (userInfo.isPresent()) {
+				double wallet = userInfo.get().getWallet() - inputData.getTotalAmount();
+				int result = userRepository.updateWallet(inputData.getUserId(), (float) wallet);
+				if (result == 1) {
+					responseData.setPhone(userInfo.get().getPhone());
+					responseData.setResponsecode("200");
+					responseData.setMessage("Payment Successful. Wallet amount has been deducted");
+				} else {
 					responseData.setResponsecode("403");
-					responseData.setMessage("User id not present");
+					responseData.setMessage("Unable to deduct Wallet amount!");
 				}
+			} else {
+				responseData.setResponsecode("403");
+				responseData.setMessage("User id not present");
+			}
 		} catch (Exception e) {
 			logger.error("Log level: INFO : exception occured while while updating the Wallet Amount");
 			throw new Exception("Exception occured while updating the Wallet Amount " + e.getMessage());
@@ -228,8 +240,8 @@ public class WalletServiceImpl implements WalletService {
 
 	@Override
 	public ResponseData getShippingDetails(InputData inputData) throws Exception {
-		
-		Optional<Users> user=null;
+
+		Optional<Users> user = null;
 		ResponseData responseData = new ResponseData();
 		try {
 			responseData = getShippingDelivery(inputData);
@@ -238,7 +250,7 @@ public class WalletServiceImpl implements WalletService {
 			responseData.setResponsecode("200");
 			responseData.setMessage("Payment will be done during delivery of the order");
 			System.out.println(responseData);
-			
+
 		} catch (Exception e) {
 			logger.error("Log level: INFO : exception occured while getting Shipping Details");
 			throw new Exception("Exception occured while getting Shipping Details " + e.getMessage());
@@ -257,7 +269,6 @@ public class WalletServiceImpl implements WalletService {
 				responseData.setDestinationOfShipping(shippngCart.get().getDestinationOfShipping());
 				responseData.setTypeOfShipping(shippngCart.get().getTypeOfShipping());
 				responseData.setTotalAmount(inputData.getTotalAmount());
-				
 
 				currentDate = String.valueOf(LocalDateTime.now());
 				deliveryDate = String.valueOf(LocalDateTime.now().plusDays(shippngCart.get().getDeliveryDuration()));
@@ -270,26 +281,26 @@ public class WalletServiceImpl implements WalletService {
 		}
 		return responseData;
 	}
+
 	@Override
 	public ResponseData orderUpdate(Order order) {
-		
-		ResponseEntity<InventoryResponse> inventorymsg =null;
-		
+
+		ResponseEntity<InventoryResponse> inventorymsg = null;
+
 		currentDate = String.valueOf(LocalDateTime.now());
 
 		order.setDateOfOrder(currentDate);
-				
-		ResponseEntity<Order> orderresponse = restTemplate.postForEntity("http://ORDERSERVICE/addorder", order,
-				Order.class);
-		
+
+		ResponseEntity<Order> orderresponse = orderFeignClient.addOrder(order);
+
 		if (orderresponse.getStatusCode() == HttpStatus.CREATED) {
 			System.out.println("Order created " + orderresponse);
 			logger.info("Order Created:" + orderresponse);
 			int cartid = orderresponse.getBody().getCartId();
-			//Inventory update
+			// Inventory update
 			inventorymsg = inventoryUpdate(cartid);
-			//Send email for order confirmation
-			String email=sendEmailForOrderConfirmation(orderresponse.getBody(), inventorymsg.getBody());
+			// Send email for order confirmation
+			String email = sendEmailForOrderConfirmation(orderresponse.getBody(), inventorymsg.getBody());
 			System.out.println(email);
 			responseData.setOrderId(orderresponse.getBody().getOrderId());
 			responseData.setCartId(orderresponse.getBody().getCartId());
@@ -297,8 +308,7 @@ public class WalletServiceImpl implements WalletService {
 			responseData.setTotalAmount(orderresponse.getBody().getAmount());
 			responseData.setResponsecode("200");
 			responseData.setMessage("Order Placed Successfully");
-		}		
-		else {
+		} else {
 			responseData.setResponsecode("403");
 			responseData.setMessage("Unable to confirm order! Please try later");
 		}
@@ -307,10 +317,9 @@ public class WalletServiceImpl implements WalletService {
 
 	@Override
 	public ResponseEntity<InventoryResponse> inventoryUpdate(int cartid) {
-		return restTemplate.getForEntity("http://INVENTORYUPDATESERVICE/inventoryupdate/{cartid}",
-				InventoryResponse.class, cartid);
+		return inventoryFeignClient.updateInventory(cartid);
 	}
-	
+
 	@Override
 	public String sendEmailForOrderConfirmation(Order orderDetails, InventoryResponse inventoryResponse) {
 		EmailDetails emailDetails = new EmailDetails();
@@ -323,12 +332,12 @@ public class WalletServiceImpl implements WalletService {
 		emailDetails.setUserId(orderDetails.getUserId());
 		emailDetails.setOrder_id(String.valueOf(orderDetails.getOrderId()));
 		emailDetails.setDelivery_date(orderDetails.getDateOfDelivery());
-		double shippingCost=0;
+		double shippingCost = 0;
 		Optional<ShippngCart> shippngCart = shippngCartRepository.findBycartId(orderDetails.getCartId());
 		if (shippngCart.isPresent()) {
-			shippingCost=shippngCart.get().getShippingCost();
+			shippingCost = shippngCart.get().getShippingCost();
 		}
-		
+
 		emailDetails.setShippingCost(String.valueOf(shippingCost));
 		emailDetails.setTotalAmount(String.valueOf(orderDetails.getAmount()));
 
@@ -365,11 +374,10 @@ public class WalletServiceImpl implements WalletService {
 
 	}
 
-	private String finalEmailForOrderConfirmation(EmailDetails emailDetails) {		
-		ResponseEntity<String> emailmsg = restTemplate.postForEntity("http://EMAILSERVICE/sendMail", emailDetails,
-				String.class);
+	private String finalEmailForOrderConfirmation(EmailDetails emailDetails) {
+		System.out.println(emailDetails);
+		ResponseEntity<String> emailmsg = emailFeignClient.sendEmail(emailDetails);
 		return emailmsg.getBody();
 	}
 
-	
 }

@@ -2,6 +2,17 @@ package com.walletService.paymentwalletservice.model;
 
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
 @Document(collection="Users")
 public class Users {
 	
@@ -10,43 +21,10 @@ public class Users {
 	private String email;
 	private float wallet;
 	private String phone;
-	
-	public String getPhone() {
-		return phone;
-	}
-	public void setPhone(String phone) {
-		this.phone = phone;
-	}
-	public int getUserId() {
-		return userId;
-	}
-	public void setUserId(int userId) {
-		this.userId = userId;
-	}
-	public String getEmail() {
-		return email;
-	}
-	public void setEmail(String email) {
-		this.email = email;
-	}
-	public float getWallet() {
-		return wallet;
-	}
-	public void setWallet(float wallet) {
-		this.wallet = wallet;
-	}
-	public String getUserName() {
-		return userName;
-	}
-	public void setUserName(String userName) {
-		this.userName = userName;
-	}
 	@Override
 	public String toString() {
-		return "Users [userId=" + userId + ", userName=" + userName + ", email=" + email + ", wallet=" + wallet + "]";
+		return "Users [userId=" + userId + ", userName=" + userName + ", email=" + email + ", wallet=" + wallet
+				+ ", phone=" + phone + "]";
 	}
-	
-	
-	
-		
+			
 }
