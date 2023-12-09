@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import com.walletService.paymentwalletservice.model.InventoryResponse;
 
-@FeignClient(name = "inventory-update-service", url = "http://inventory-update-service-container:9502", fallback = InventoryFeignClientFallback.class)
+@FeignClient(name = "inventory-update-service", url = "http://172.172.241.64:9502", fallback = InventoryFeignClientFallback.class)
 public interface InventoryFeignClient {
 
 	@GetMapping("/inventoryupdate/{cartId}")

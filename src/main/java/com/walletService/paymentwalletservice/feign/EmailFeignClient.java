@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import com.walletService.paymentwalletservice.model.EmailDetails;
 
-@FeignClient(name = "email-service", url = "http://email-service-container:9503", fallback = EmailFeignClientFallback.class)
+@FeignClient(name = "email-service", url = "http://172.172.241.64:9503", fallback = EmailFeignClientFallback.class)
 public interface EmailFeignClient {
 
 	@PostMapping("/sendMail")
