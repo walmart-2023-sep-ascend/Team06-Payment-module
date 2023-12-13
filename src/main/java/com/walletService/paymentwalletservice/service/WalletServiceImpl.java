@@ -21,6 +21,7 @@ import com.walletService.paymentwalletservice.exception.UserNotFoundException;
 import com.walletService.paymentwalletservice.feign.EmailFeignClient;
 import com.walletService.paymentwalletservice.feign.InventoryFeignClient;
 import com.walletService.paymentwalletservice.feign.OrderFeignClient;
+import com.walletService.paymentwalletservice.feign.ShippingCartFeignClient;
 import com.walletService.paymentwalletservice.model.EmailDetails;
 import com.walletService.paymentwalletservice.model.EventCodeLog;
 import com.walletService.paymentwalletservice.model.InputData;
@@ -30,9 +31,9 @@ import com.walletService.paymentwalletservice.model.Product;
 import com.walletService.paymentwalletservice.model.ProductResponse;
 import com.walletService.paymentwalletservice.model.Products;
 import com.walletService.paymentwalletservice.model.ResponseData;
+import com.walletService.paymentwalletservice.model.ShippingInput;
 import com.walletService.paymentwalletservice.model.ShippngCart;
 import com.walletService.paymentwalletservice.model.Users;
-import com.walletService.paymentwalletservice.repository.ShippngCartRepository;
 import com.walletService.paymentwalletservice.repository.UserRepository;
 import com.walletService.paymentwalletservice.repository.WalletRepository;
 
@@ -48,30 +49,31 @@ public class WalletServiceImpl implements WalletService {
 	UserRepository userRepository;
 
 	@Autowired
-	ShippngCartRepository shippngCartRepository;
-
-	@Autowired
 	EmailService emailService;
-	
+
 	@Autowired
 	RestTemplate restTemplate;
 
 	private final OrderFeignClient orderFeignClient;
 	private final InventoryFeignClient inventoryFeignClient;
 	private final EmailFeignClient emailFeignClient;
+	private final ShippingCartFeignClient shippingCartFeignClient;
+	
 
 	@Autowired
 	public WalletServiceImpl(OrderFeignClient orderFeignClient, InventoryFeignClient inventoryFeignClient,
-			EmailFeignClient emailFeignClient) {
+			EmailFeignClient emailFeignClient, ShippingCartFeignClient shippingCartFeignClient) {
 
 		this.orderFeignClient = orderFeignClient;
 		this.inventoryFeignClient = inventoryFeignClient;
 		this.emailFeignClient = emailFeignClient;
+		this.shippingCartFeignClient = shippingCartFeignClient;
 	}
 
 	String currentDate = null;
 	String deliveryDate = null;
 	double totalAmount = 0;
+	ShippingInput shippingInput;
 
 	ResponseData responseData = new ResponseData();
 
@@ -184,7 +186,7 @@ public class WalletServiceImpl implements WalletService {
 			}
 
 		} catch (Exception e) {
-			logger.error("Log level: INFO : exception occured while validating  Customer Wallet");
+			logger.error("Log level: INFO : exception occured while authenticating user");
 			throw new Exception("Exception occured while getting the Customer Info");
 		}
 		return responseData;
@@ -194,15 +196,17 @@ public class WalletServiceImpl implements WalletService {
 		double totalAmount = 0;
 		ResponseData responseData = new ResponseData();
 		try {
-			Optional<ShippngCart> shippngCart = shippngCartRepository.findBycartId(inputData.getCartId());
-			if (shippngCart.isPresent()) {
-				responseData.setUserId(inputData.getUserId());
-				totalAmount = inputData.getAmount() + shippngCart.get().getShippingCost();
-				responseData.setTotalAmount(totalAmount);
-				responseData.setResponsecode("200");
-			} else
-				responseData.setResponsecode("403");
+			shippingInput = new ShippingInput();
+			shippingInput.setUserId(inputData.getUserId());
+			shippingInput.setCartId(inputData.getCartId());
+			ShippngCart shippngCart = shippingCartFeignClient.getShippingDetails(shippingInput);
+			responseData.setUserId(inputData.getUserId());
+			totalAmount = inputData.getAmount() + shippngCart.getShippingCost();
+			responseData.setTotalAmount(totalAmount);
+			responseData.setResponsecode("200");
+
 		} catch (Exception e) {
+			responseData.setResponsecode("403");
 			logger.error("Log level: INFO : Exception occured while getting shippingCost Details !!");
 			throw new Exception("Exception occured while getting shippingCost " + e.getMessage());
 		}
@@ -210,7 +214,7 @@ public class WalletServiceImpl implements WalletService {
 	}
 
 	public ResponseData updateWallet(InputData inputData) throws Exception {
-		// double totalAmount = 0;
+
 		ResponseData responseData = new ResponseData();
 		try {
 			responseData = getShippingDelivery(inputData);
@@ -264,16 +268,18 @@ public class WalletServiceImpl implements WalletService {
 			responseData.setUserId(inputData.getUserId());
 			responseData.setCartId(inputData.getCartId());
 			logger.error("Log level: INFO : Fetching ShippingCart details");
-			Optional<ShippngCart> shippngCart = shippngCartRepository.findBycartId(inputData.getCartId());
-			if (shippngCart.isPresent()) {
-				responseData.setDestinationOfShipping(shippngCart.get().getDestinationOfShipping());
-				responseData.setTypeOfShipping(shippngCart.get().getTypeOfShipping());
-				responseData.setTotalAmount(inputData.getTotalAmount());
 
-				currentDate = String.valueOf(LocalDateTime.now());
-				deliveryDate = String.valueOf(LocalDateTime.now().plusDays(shippngCart.get().getDeliveryDuration()));
-				responseData.setDeliverydate(deliveryDate);
-			}
+			shippingInput = new ShippingInput();
+			shippingInput.setUserId(inputData.getUserId());
+			shippingInput.setCartId(inputData.getCartId());
+			ShippngCart shippngCart = shippingCartFeignClient.getShippingDetails(shippingInput);
+			responseData.setDestinationOfShipping(shippngCart.getDestinationOfShipping());
+			responseData.setTypeOfShipping(shippngCart.getTypeOfShipping());
+			responseData.setTotalAmount(inputData.getTotalAmount());
+			currentDate = String.valueOf(LocalDateTime.now());
+			deliveryDate = String.valueOf(LocalDateTime.now().plusDays(shippngCart.getDeliveryDuration()));
+			responseData.setDeliverydate(deliveryDate);
+
 		} catch (Exception e) {
 			responseData.setResponsecode("403");
 			logger.error("Log level: INFO : exception occured while getting Shipping Details");
@@ -301,7 +307,9 @@ public class WalletServiceImpl implements WalletService {
 			inventorymsg = inventoryUpdate(cartid);
 			// Send email for order confirmation
 			String email = sendEmailForOrderConfirmation(orderresponse.getBody(), inventorymsg.getBody());
-			System.out.println(email);
+			// Notify Order creation to downstream
+			Order updateresponse=shippingCartFeignClient.notifyOrder(order);
+			
 			responseData.setOrderId(orderresponse.getBody().getOrderId());
 			responseData.setCartId(orderresponse.getBody().getCartId());
 			responseData.setDeliverydate(orderresponse.getBody().getDateOfDelivery());
@@ -333,14 +341,16 @@ public class WalletServiceImpl implements WalletService {
 		emailDetails.setOrder_id(String.valueOf(orderDetails.getOrderId()));
 		emailDetails.setDelivery_date(orderDetails.getDateOfDelivery());
 		double shippingCost = 0;
-		Optional<ShippngCart> shippngCart = shippngCartRepository.findBycartId(orderDetails.getCartId());
-		if (shippngCart.isPresent()) {
-			shippingCost = shippngCart.get().getShippingCost();
-		}
+
+		// Shipping cost details
+		shippingInput = new ShippingInput();
+		shippingInput.setUserId(orderDetails.getUserId());
+		shippingInput.setCartId(inventoryResponse.getCartId());
+		ShippngCart shippngCart = shippingCartFeignClient.getShippingDetails(shippingInput);
+		shippingCost = shippngCart.getShippingCost();
 
 		emailDetails.setShippingCost(String.valueOf(shippingCost));
 		emailDetails.setTotalAmount(String.valueOf(orderDetails.getAmount()));
-
 		// User Info
 		Optional<Users> user = null;
 		try {

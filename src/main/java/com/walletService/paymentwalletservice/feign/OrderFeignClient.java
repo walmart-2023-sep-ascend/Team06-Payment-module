@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import com.walletService.paymentwalletservice.model.Order;
 
-@FeignClient(name = "order-service", url = "http://172.172.241.64:9501", fallback = OrderFeignClientFallback.class)
+@FeignClient(name = "order-service", url = "${capstone.orderservice.url}", fallback = OrderFeignClientFallback.class)
 public interface OrderFeignClient {
 
 	@PostMapping("/addorder")

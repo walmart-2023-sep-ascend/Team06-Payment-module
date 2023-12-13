@@ -17,7 +17,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.walletService.paymentwalletservice.email.EmailService;
-import com.walletService.paymentwalletservice.repository.ShippngCartRepository;
 import com.walletService.paymentwalletservice.repository.UserRepository;
 import com.walletService.paymentwalletservice.repository.WalletRepository;
 import com.walletService.paymentwalletservice.model.EventCodeLog;
@@ -28,7 +27,7 @@ import com.walletService.paymentwalletservice.model.Users;
 
 @ExtendWith(MockitoExtension.class)
 public class WalletServiceImplTest {
-/*
+
 	@InjectMocks
 	WalletServiceImpl walletServiceImpl;
 
@@ -40,9 +39,6 @@ public class WalletServiceImplTest {
 
 	@Mock
 	WalletRepository walletRepository;
-
-	@Mock
-	ShippngCartRepository shippngCartRepository;
 
 	@Test
 	void testgetUserInfo() throws Exception {
@@ -137,7 +133,7 @@ public class WalletServiceImplTest {
 		inputData.setUserId(45321);
 		inputData.setCartId(56789);
 
-		when(shippngCartRepository.findBycartId(any())).thenReturn(shippngCart);
+		//when(shippngCartRepository.findBycartId(any())).thenReturn(shippngCart);
 
 		ResponseData responseData = walletServiceImpl.getPayableAmount(inputData);
 
@@ -162,7 +158,7 @@ public class WalletServiceImplTest {
 		inputData.setUserId(45321);
 		inputData.setCartId(56789);
 
-		when(shippngCartRepository.findBycartId(any())).thenReturn(shippngCart);
+		//when(shippngCartRepository.findBycartId(any())).thenReturn(shippngCart);
 
 		when(userRepository.findByuserId(any())).thenReturn(user);
 
@@ -192,7 +188,7 @@ public class WalletServiceImplTest {
 		inputData.setUserId(45321);
 		inputData.setCartId(56789);
 
-		when(shippngCartRepository.findBycartId(any())).thenReturn(shippngCart);
+		//when(shippngCartRepository.findBycartId(any())).thenReturn(shippngCart);
 		when(userRepository.findByuserId(any())).thenReturn(user);
 
 		ResponseData responseData = walletServiceImpl.getShippingDetails(inputData);
@@ -204,5 +200,5 @@ public class WalletServiceImplTest {
 		//assertEquals("Payment will be done during delivery of the order", responseData.getMessage());
 
 	}
-*/
+
 }
