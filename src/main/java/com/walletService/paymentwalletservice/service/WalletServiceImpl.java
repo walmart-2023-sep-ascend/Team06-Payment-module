@@ -308,7 +308,7 @@ public class WalletServiceImpl implements WalletService {
 			// Send email for order confirmation
 			String email = sendEmailForOrderConfirmation(orderresponse.getBody(), inventorymsg.getBody());
 			// Notify Order creation to downstream
-			Order updateresponse=shippingCartFeignClient.notifyOrder(order);
+			Order updateresponse=shippingCartFeignClient.notifyOrder(orderresponse.getBody());
 			
 			responseData.setOrderId(orderresponse.getBody().getOrderId());
 			responseData.setCartId(orderresponse.getBody().getCartId());
